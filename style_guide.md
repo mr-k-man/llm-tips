@@ -300,6 +300,33 @@ LLM lexical fashions shift. The following synthesis from Wikipedia:AISIGNS is op
 
 "Delve" peaked and is now on sharp decline; its presence today is less diagnostic than a year ago. "Emphasising," "enhance," "highlighting," "showcasing" are the current persistent tells.
 
+### 4.10 Filler-phrase replacements
+
+Verbose filler resolves to one of: a simpler conjunction, the bare verb, or deletion. Common replacements:
+
+| Filler | Replacement |
+|---|---|
+| In order to | To |
+| In order to achieve this goal | To achieve this |
+| Due to the fact that | Because |
+| At this point in time | Now |
+| At the present time | Now |
+| In the event that | If |
+| Has the ability to | Can |
+| It is important to note that | (state the fact) |
+| It is worth noting that | (state the fact) |
+| It should be noted that | (state the fact) |
+| For the purpose of | For / To |
+| In light of the fact that | Because |
+| In spite of the fact that | Although |
+| With regard to | About / On |
+| In the process of | (just the verb) |
+| As a matter of fact | (delete) |
+| Needless to say | (delete) |
+| It goes without saying | (delete) |
+
+Source: Humanizer kit (Berman 2026); WP:AISIGNS hedge inventory.
+
 ---
 
 ## 5. Banned syntactic and structural patterns
@@ -438,6 +465,24 @@ Zamaraeva et al. (ACL 2025 Long Papers) compared NYT-style human writing to six 
 
 **Operational implication.** If you find that the first 5–8 words of every paragraph follow a similar syntactic template, the piece is AI-shaped even if every word is human-replaced.
 
+### 5.14 Performed authenticity (second-generation tells)
+
+When models are prompted to "sound human" they overshoot, producing a new family of tells. These are subtler than classic AI vocabulary because they *perform* the very signals — informality, opinion — that mark human writing, but mechanically. Catalogued by the Humanizer kit (Berman 2026, patterns 25–28) as "performed authenticity."
+
+**Sub-patterns.**
+
+1. **Philosophical mic drops** — "Maybe both." / "And honestly?" / "Maybe that's the point." / "I think that says something." / "If that's not [noun], I don't know what is." / "Which is either … or …" End-of-paragraph reflection that gestures at depth without adding any. A shrug performing thoughtfulness.
+
+2. **Performed balanced contrasts** — "[X] but not [Y]." / "Simple enough to use, powerful enough to matter." / "Take the work seriously but not yourself." Sentence-level cousin of §6.6 both-sides framing. Real human contrasts are lopsided; the perfectly weighted form is AI.
+
+3. **Brand-manifesto structure** — Each paragraph labels cleanly with a single word (Identity / Function / Values / Reflection / Mission). Reads as if drafted from a creative brief. Real writing leads with whatever's most interesting and lets details surface.
+
+4. **Parenthetical personality injection** — "(and honestly?)" / "(not that I'm complaining)" / "(if that makes sense)" / "(or something like that)" / "(maybe that's the point)" Mid-sentence asides that decorate rather than disrupt. Real asides break the sentence; these soften authority.
+
+**Why this category.** §4 and §5.1–§5.13 catalogue first-generation tells — what the model produces by default. These four are second-generation: surface moves the model produces specifically when prompted to "sound human" or "add personality." Cleaning a first-generation tell often produces a second-generation one in its place. Expect more as RLHF further fine-tunes for "naturalness."
+
+**Rule.** Strip every philosophical mic drop without replacement. Don't soften authority with parenthetical asides — say it directly or cut the sentence. If your paragraph structure could be labelled with one-word themes, restructure.
+
 ---
 
 ## 6. Rhetorical bans
@@ -504,6 +549,12 @@ AI writing flatters the reader. Every idea in a list is "excellent," "powerful,"
 "How do we solve this problem? What does this mean for leaders? Why does this matter?" Cherryleaf: "AI loves rhetorical questions, especially in clusters of three (see: tricolon). But these aren't genuine inquiries opening space for thought. They're declarative statements wearing question marks, transitions disguised as engagement."
 
 **Rule.** Ask questions you don't know how to answer. One rhetorical question per piece, maximum, and only if the question has teeth.
+
+### 6.9 False ranges
+
+"From X to Y" framing where X and Y aren't on a meaningful scale. *"Our journey through the universe has taken us from the singularity of the Big Bang to the grand cosmic web, from the birth and death of stars to the enigmatic dance of dark matter."* The endpoints don't bound a continuum; they're impressive examples dressed as a span.
+
+**Rule.** Use "from X to Y" only when X and Y are real extremes of an ordered set (dates, sizes, levels, prices). Otherwise list the items plainly: "The book covers the Big Bang, star formation, and current theories about dark matter." Source: Humanizer kit pattern #12 (Berman 2026).
 
 ---
 
@@ -790,6 +841,9 @@ Run every piece through this before shipping. A piece scoring 3 or more "hits" s
 - [ ] Check copulas. If more than 2 instances of "serves as" / "stands as" / "represents" / "marks" / "boasts" / "features" → rewrite.
 - [ ] Count terminal participial phrases ("-ing" phrases at end of sentence). If more than one per 300 words → rewrite.
 - [ ] Count em dashes. If more than one per three paragraphs → rewrite or convert to commas/periods.
+- [ ] Count philosophical mic drops ("Maybe both.", "And honestly?", "Maybe that's the point.", "I think that says something.", "If that's not [noun], I don't know what is."). Any hit → cut the line.
+- [ ] Count parenthetical personality injections ("(and honestly?)", "(not that I'm complaining)", "(if that makes sense)", "(or something like that)"). Any hit → cut the parenthetical.
+- [ ] Check "from X to Y" constructions. If X and Y don't bound a real ordered scale → rewrite as a plain list.
 
 ### Voice audit:
 
@@ -906,6 +960,7 @@ Same word count, specific runtime versions, specific protocols, specific provide
 - Nair, M. "Why Does AI Keep Saying 'It's Not X, It's Y'?" *Dev.to*, 17 March 2026. **RLHF / DPO contrastive-objective explanation.**
 - Massobrio, A. "Triviality and Rhetorical Triplets — a Study on LLM Clichés," LinkedIn, 2025.
 - Brookings, "Detecting AI fingerprints: A guide to watermarking and beyond," 2024.
+- Berman, M. "Humanizer," OpenClaw kit v2.2.3, journeykits.ai/browse/kits/matt-clawd/humanizer, released 1 April 2026. **Source of §4.10 filler-phrase replacement table, §5.14 performed-authenticity patterns 1–4 (philosophical mic drops, performed balanced contrasts, brand-manifesto structure, parenthetical personality injection), and §6.9 false ranges. 28-pattern checklist derived from WP:AISIGNS.**
 
 ---
 
