@@ -1,0 +1,1276 @@
+# Anti-AI-Tell Style Policy (worked example with repo-local paths).
+# Machine-readable ruleset for detecting and avoiding LLM-generated writing patterns.
+#
+# CANONICAL RELEASE TEMPLATE:
+#   release/v1/contract-declaration/STYLE_POLICY_ANTI_AI_TELL_GENERIC.toml  (repo-neutral)
+#   release/v1/contract-declaration/STYLE_POLICY_ANTI_AI_TELL-_SLUG_.toml   (repo-shaped)
+#   release/v1/contract-declaration/AGENT_GUIDE.md                          (how-to)
+#   release/v1/contract-declaration/RELEASE.toml                            (manifest)
+#
+# This file keeps the filled, repo-local variant (absolute paths, no placeholders)
+# for copy-forward authoring and for regression testing the validator.
+#
+# Successor to examples/WRITING_STYLE_RULES_GENERIC.toml, with evidence ratios
+# drawn from peer-reviewed / arXiv primary sources.
+#
+# Companion document: style_guide.md (12,000-word rationale)
+# Linter:             tools/lint_writing_style.py
+#
+# Primary sources:
+#   Reinhart/Brown et al., PNAS 2025 (DOI 10.1073/pnas.2422455122) - Biber 66-feature analysis
+#   Juzek & Ward, COLING 2025 pp. 6397-6411 - 21 focal words, RLHF causation
+#   Juzek & Ward, arXiv:2508.01930 - LHF lexical preference experiments
+#   Kobak et al., arXiv:2406.07016 / Scientometrics 2024 - PubMed excess vocabulary
+#   McGovern et al., GenAIDetect 2025 - POS-n-gram fingerprints
+#   Freeburg, arXiv:2603.27006 - em-dash as markdown leakage, 12-model table
+#   Zamaraeva et al., ACL 2025 Long Papers - HPSG syntactic divergence
+#   Washington Post (Merrill, Chen, Kumer), 13 Nov 2025 - 328,744 ChatGPT messages
+#   Sam Kriss, NYT Magazine, 3 Dec 2025
+#   Wikipedia:Signs of AI writing (WP:AISIGNS)
+#   Pangram Labs comprehensive guide, 2 Apr 2025
+#   jpeggdev/humanize-writing ai-tells reference
+
+[meta]
+title = "Anti-AI-Tell Style Policy"
+template_kind = "contract-declaration"
+release_version = "1.0.0"
+created = "2026-04-18"
+owners = ["dag-toml-templates"]
+review_subject = "AI writing detection avoidance (evidence-backed)"
+status = "declared"
+companion_document = "style_guide.md"
+supersedes = ["WRITING_STYLE_RULES_GENERIC.toml"]
+sources = [
+  "Reinhart/Brown et al., PNAS 2025, DOI 10.1073/pnas.2422455122",
+  "Juzek & Ward, COLING 2025, pp. 6397-6411",
+  "Juzek & Ward, arXiv:2508.01930 (2025)",
+  "Kobak et al., arXiv:2406.07016 / Scientometrics 2024",
+  "McGovern et al., ACL GenAIDetect 2025",
+  "Freeburg, arXiv:2603.27006 (2026)",
+  "Zamaraeva et al., ACL 2025 Long Papers, pp. 9041-9060",
+  "Washington Post (Merrill/Chen/Kumer), 13 November 2025",
+  "Sam Kriss, NYT Magazine, 3 December 2025",
+  "Wikipedia:Signs of AI writing (WP:AISIGNS)",
+  "Pangram Labs, Comprehensive Guide, 2 April 2025",
+  "jpeggdev/humanize-writing ai-tells.md reference",
+]
+
+# =====================================================================
+# LEXICAL TIER 1 - Absolute bans (appear in all major primary sources)
+# Each appears at 300-1,375x human rate in at least one controlled study.
+# Density target: zero occurrences in running prose without specific reason.
+# =====================================================================
+
+[[contracts]]
+id = "AIS:L01"
+domain = "lexical_tier1"
+statement = "Do not use 'delve', 'delves', 'delving', 'delved'. Use 'look into', 'dig into', 'examine', or rewrite to state the finding directly."
+applies_to = ["prose", "documentation", "marketing", "technical_docs", "code_comments"]
+authority = "Juzek & Ward COLING 2025: 1,374.92x ChatGPT:human ratio. Kobak et al. 2024: r=25.2 in PubMed 2024 vs 2022. Kriss NYT Mag 2025: 2,700% post-2022 spike."
+evidence_ratio = 1374.92
+blacklist = ["delve", "delves", "delving", "delved"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences of any blacklisted form",
+]
+
+[[contracts]]
+id = "AIS:L02"
+domain = "lexical_tier1"
+statement = "Do not use 'tapestry' as metaphor. If you literally mean woven cloth, fine; otherwise delete or replace with a specific noun."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Brown et al. PNAS 2025: GPT-4o 155x, GPT-4o Mini 147x human rate. Pangram: 25x overrepresentation vs Project Gutenberg baseline."
+evidence_ratio = 155.0
+blacklist = ["tapestry", "tapestries", "rich tapestry"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero metaphorical uses of tapestry",
+]
+
+[[contracts]]
+id = "AIS:L03"
+domain = "lexical_tier1"
+statement = "Do not use 'intricate' or 'intricacies'. Use 'detailed', 'complicated', or describe the actual details."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Juzek & Ward 2025: 611.24x (intricate), 772.85x (intricacies). Brown et al. 2025: GPT-4o 119x human rate."
+evidence_ratio = 772.85
+blacklist = ["intricate", "intricacies", "intricately"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences",
+]
+
+[[contracts]]
+id = "AIS:L04"
+domain = "lexical_tier1"
+statement = "Do not use 'vibrant'. Pangram measured 1,260x overrepresentation vs Project Gutenberg baseline."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Pangram Labs 2025: 1,260x overrepresentation. WP:AISIGNS: persistent tell across GPT-4 / GPT-4o eras."
+evidence_ratio = 1260.0
+blacklist = ["vibrant", "vibrantly"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences",
+]
+
+[[contracts]]
+id = "AIS:L05"
+domain = "lexical_tier1"
+statement = "Do not use 'realm' as metaphor for 'domain' or 'area'. Use 'area', 'field', 'world'. 'Realm' is for Tolkien."
+applies_to = ["prose", "documentation", "marketing", "technical_docs"]
+authority = "Juzek & Ward 2025: 381.10x human rate. WP:AISIGNS GPT-4 era vocabulary."
+evidence_ratio = 381.10
+blacklist = ["realm", "realms", "in the realm of"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero metaphorical uses of realm",
+]
+
+[[contracts]]
+id = "AIS:L06"
+domain = "lexical_tier1"
+statement = "Do not use 'testament' ('X is a testament to Y'). Delete; describe what X actually demonstrates."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "WP:AISIGNS 'Undue emphasis on significance, legacy, and broader trends'. jpeggdev Tier 1."
+blacklist = ["testament", "a testament to", "stands as a testament"]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences",
+]
+
+[[contracts]]
+id = "AIS:L07"
+domain = "lexical_tier1"
+statement = "Do not use 'underscore(s)' or 'underscoring' as a verb meaning emphasise. Use 'shows', 'proves', or rewrite so the fact carries its own weight."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Juzek & Ward 2025: 390.65x-903.61x across forms. Kobak et al. 2024: r=9.1 in PubMed. WP:AISIGNS persistent GPT-5 era tell."
+evidence_ratio = 903.61
+blacklist = ["underscore", "underscores", "underscoring", "underscored"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences as verb",
+]
+
+[[contracts]]
+id = "AIS:L08"
+domain = "lexical_tier1"
+statement = "Do not use 'showcase', 'showcases', 'showcasing'. Use 'shows', 'includes', 'features' (sparingly), or rewrite."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Juzek & Ward 2025: 422.45x human rate. Kobak et al. 2024: r=9.2. WP:AISIGNS GPT-5 era tell."
+evidence_ratio = 422.45
+blacklist = ["showcase", "showcases", "showcasing", "showcased"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences",
+]
+
+[[contracts]]
+id = "AIS:L09"
+domain = "lexical_tier1"
+statement = "Do not use 'seamless' or 'seamlessly'. Delete or replace with the specific integration mechanism."
+applies_to = ["prose", "documentation", "marketing", "technical_docs"]
+authority = "Pangram Labs 2025. WP:AISIGNS. jpeggdev Tier 2."
+blacklist = ["seamless", "seamlessly", "seamlessness"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences",
+]
+
+[[contracts]]
+id = "AIS:L10"
+domain = "lexical_tier1"
+statement = "Do not use 'navigate' or 'navigating' as metaphor for handling. 'Navigate challenges', 'navigate the landscape' are pure AI. Say 'handle', 'manage', or describe the actual steps."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Cherryleaf 2026 ('metaphor abuse'). jpeggdev Tier 1."
+blacklist = [
+  "navigate the landscape",
+  "navigate the complexities",
+  "navigate the challenges",
+  "navigating the landscape",
+  "navigating the complexities",
+  "navigating the challenges",
+  "as we navigate",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero metaphorical navigate-phrase occurrences",
+]
+
+[[contracts]]
+id = "AIS:L11"
+domain = "lexical_tier1"
+statement = "Do not use 'leverage' as a verb meaning 'use'. It almost always means 'use'. Use 'use'."
+applies_to = ["prose", "documentation", "marketing", "technical_docs"]
+authority = "Pangram Labs 2025. jpeggdev Tier 1. Referenced in WRITING_STYLE_RULES_GENERIC.toml STYLE:W01."
+blacklist = ["leverage", "leverages", "leveraging", "leveraged"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences as a verb meaning 'use'",
+]
+
+[[contracts]]
+id = "AIS:L12"
+domain = "lexical_tier1"
+statement = "Do not use 'boasts' meaning 'has'. Replace with 'has'."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Juzek & Ward 2025: 918.18x human rate. WP:AISIGNS 'Avoidance of basic copulatives'."
+evidence_ratio = 918.18
+blacklist = ["boasts", "boasting"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences as ersatz copula",
+]
+
+[[contracts]]
+id = "AIS:L13"
+domain = "lexical_tier1"
+statement = "Do not use 'multifaceted' or 'nuanced'. If you believe it, describe the facets / the nuance. Labels without content are hollow."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Cherryleaf 2026. jpeggdev Tier 2. Common in GPT-5 era per WP:AISIGNS."
+blacklist = ["multifaceted", "nuanced", "nuance"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 1
+reviewer_checks = [
+  "max one occurrence per 2,000 words without accompanying specifics",
+]
+
+[[contracts]]
+id = "AIS:L14"
+domain = "lexical_tier1"
+statement = "Do not use 'comprehensive' as a modifier. Either prove comprehensiveness with scope data or delete."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Pangram Labs 2025. jpeggdev Tier 2. Kobak et al. excess 2024."
+blacklist = ["comprehensive", "comprehensively"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences without measured scope",
+]
+
+[[contracts]]
+id = "AIS:L15"
+domain = "lexical_tier1"
+statement = "Do not use hype adjectives of importance: crucial, pivotal, vital, paramount. Replace with the specific consequence or metric."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Kobak et al. 2024: 'crucial' excess δ=0.026. Juzek & Ward 2025 focal word set."
+evidence_ratio = 0.026
+blacklist = ["crucial", "crucially", "pivotal", "pivotally", "vital", "vitally", "paramount"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero hype-importance adjectives",
+]
+
+[[contracts]]
+id = "AIS:L16"
+domain = "lexical_tier1"
+statement = "Do not use 'groundbreaking', 'revolutionary', 'transformative'. Almost never true. Delete."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Juzek & Ward 2025: 330.42x (groundbreaking). WP:AISIGNS. jpeggdev Tier 2. Referenced in WRITING_STYLE_RULES_GENERIC.toml STYLE:W01."
+evidence_ratio = 330.42
+blacklist = ["groundbreaking", "revolutionary", "revolutionize", "revolutionise", "transformative"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences",
+]
+
+[[contracts]]
+id = "AIS:L17"
+domain = "lexical_tier1"
+statement = "Do not use 'advancements'. Use 'advances' if you must. 277x over human rate in Juzek-Ward focal-word set."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Juzek & Ward 2025: 277.59x human rate."
+evidence_ratio = 277.59
+blacklist = ["advancements"]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences; use 'advances' if needed",
+]
+
+[[contracts]]
+id = "AIS:L18"
+domain = "lexical_tier1"
+statement = "Do not use narrative-continuation AI marker words. Brown et al. GPT-4o measured these at 80-170x human rate in matched continuation."
+applies_to = ["prose"]
+authority = "Brown et al. PNAS 2025, Tables 4 and S."
+blacklist = [
+  "camaraderie",
+  "palpable",
+  "fleeting",
+  "solace",
+  "unspoken",
+  "grapple",
+  "grapples",
+  "grappling",
+  "amidst",
+  "cacophony",
+  "unravel",
+]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences in prose continuation",
+]
+
+# =====================================================================
+# LEXICAL TIER 2 - Density-restricted. Max 1 per 2,000 words.
+# =====================================================================
+
+[[contracts]]
+id = "AIS:L20"
+domain = "lexical_tier2"
+statement = "Restrict to max one per ~2,000 words: connective and hype-adjacent vocabulary."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Pangram Labs 2025 ~400-word list. jpeggdev Tier 2."
+blacklist = [
+  "additionally",
+  "moreover",
+  "furthermore",
+  "enhance",
+  "foster",
+  "fostering",
+  "robust",
+  "dynamic",
+  "holistic",
+  "cutting-edge",
+  "game-changing",
+  "innovative",
+  "streamline",
+  "empower",
+  "embark",
+  "endeavour",
+  "endeavor",
+  "garner",
+  "harness",
+  "illuminate",
+  "resonate",
+  "resonates",
+  "weaving",
+  "journey",
+  "roadmap",
+  "ecosystem",
+  "synergy",
+  "align with",
+  "imperative",
+  "overarching",
+  "unprecedented",
+  "profound",
+  "renowned",
+  "stunning",
+  "exemplifies",
+  "indelible",
+  "deeply rooted",
+]
+match_mode = "word_boundary_case_insensitive"
+density_threshold = 1
+density_per_words = 2000
+reviewer_checks = [
+  "density of any listed term no more than 1 per 2,000 words",
+  "combined density across all listed terms no more than 3 per 2,000 words",
+]
+
+# =====================================================================
+# OPENER BANS - Never start a sentence, paragraph, or section with these
+# =====================================================================
+
+[[contracts]]
+id = "AIS:O01"
+domain = "opener_banned"
+statement = "Never open with 'In today's fast-paced / ever-evolving / digital / modern / interconnected world', or any 'In today's [noun]' variant."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "WP:AISIGNS. jpeggdev 'In today's...' family. Cherryleaf 2026."
+blacklist = [
+  "In today's",
+  "In an increasingly",
+  "In the ever-evolving",
+  "In the ever-changing",
+  "In recent years",
+  "In the modern",
+]
+match_mode = "sentence_start_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero sentences, paragraphs, or sections opening with any banned phrase",
+]
+
+[[contracts]]
+id = "AIS:O02"
+domain = "opener_banned"
+statement = "Never open with discourse hedges: 'It is / it's important to note', 'worth noting / mentioning', 'should be noted'."
+applies_to = ["prose", "documentation", "marketing", "code_comments"]
+authority = "Juzek & Ward 2025 experimental RLHF study. WP:AISIGNS. DeGPT tells list 2026."
+blacklist = [
+  "It's important to note",
+  "It is important to note",
+  "It's worth noting",
+  "It is worth noting",
+  "It's worth mentioning",
+  "It is worth mentioning",
+  "It should be noted",
+  "It should be mentioned",
+  "It's worth considering",
+  "It bears mentioning",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero discourse-hedge openers",
+]
+
+[[contracts]]
+id = "AIS:O03"
+domain = "opener_banned"
+statement = "Never open with 'At its core', 'At the heart of', 'When it comes to [X]', 'Picture this', 'Imagine a world where', 'Let's dive in', 'Without further ado'."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Cherryleaf 2026. jpeggdev 'At its core' family. Jim Christian 17 Tells 2025."
+blacklist = [
+  "At its core",
+  "At the heart of",
+  "When it comes to",
+  "Picture this",
+  "Imagine a world where",
+  "Let's dive in",
+  "Let's unpack",
+  "Without further ado",
+  "Here's the thing",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero rhetorical-setup openers",
+]
+
+[[contracts]]
+id = "AIS:O04"
+domain = "opener_banned"
+statement = "Never open an article with 'In this article, we will explore', or any meta-commentary announcing structure."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "WP:AISIGNS. Pangram 2025. jpeggdev."
+blacklist = [
+  "In this article, we will",
+  "In this post, we will",
+  "In this guide, we will",
+  "We'll explore",
+  "Let's take a look",
+  "By the end of this article",
+  "By the end of this post",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero meta-structural announcements",
+]
+
+# =====================================================================
+# CLOSER BANS - Never end a section, paragraph, or piece with these
+# =====================================================================
+
+[[contracts]]
+id = "AIS:C01"
+domain = "closer_banned"
+statement = "Never close with 'In conclusion', 'To conclude', 'In summary', 'To summarise', 'Overall', 'Ultimately [X] depends on [Y]'."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Search Engine Land Feb 2026 (-0.118 engagement correlation, strongest negative signal in 1,000-URL study). Referenced in WRITING_STYLE_RULES_GENERIC.toml STYLE:S06."
+evidence_ratio = -0.118
+blacklist = [
+  "In conclusion",
+  "To conclude",
+  "In summary",
+  "To summarise",
+  "To summarize",
+  "In summary,",
+  "Overall,",
+  "Ultimately,",
+  "The bottom line",
+  "At the end of the day",
+  "When all is said and done",
+  "As we move forward",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero conclusion-wrapper phrases anywhere in the document",
+]
+
+[[contracts]]
+id = "AIS:C02"
+domain = "closer_banned"
+statement = "Never end with 'There is no one-size-fits-all solution', 'Only time will tell', 'The future of X remains to be seen'."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "WP:AISIGNS. jpeggdev AI Closers. Cherryleaf 2026."
+blacklist = [
+  "There is no one-size-fits-all",
+  "there is no one-size-fits-all",
+  "Only time will tell",
+  "remains to be seen",
+  "The future is bright",
+  "Start your journey today",
+  "Exciting times lie ahead",
+  "The journey toward",
+  "The journey towards",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero non-committal close phrases",
+]
+
+# =====================================================================
+# SYCOPHANCY / CHATBOT ARTEFACTS - Always delete
+# =====================================================================
+
+[[contracts]]
+id = "AIS:S01"
+domain = "sycophancy"
+statement = "Delete sycophantic openers: 'Great question!', 'Certainly!', 'Absolutely!', 'Sure! Here's'."
+applies_to = ["prose", "documentation", "marketing", "code_comments", "commit_messages"]
+authority = "DeGPT 2026 Worst Offenders list. jpeggdev Sycophantic / Chatbot Artifacts."
+blacklist = [
+  "Great question",
+  "Certainly!",
+  "Absolutely!",
+  "Sure! Here's",
+  "Sure, here's",
+  "Here's a comprehensive overview",
+  "Here's a detailed breakdown",
+  "You're absolutely right",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences",
+]
+
+[[contracts]]
+id = "AIS:S02"
+domain = "sycophancy"
+statement = "Delete closers: 'I hope this helps', 'Let me know if you'd like me to elaborate / expand', 'Feel free to'."
+applies_to = ["prose", "documentation", "marketing", "code_comments", "commit_messages"]
+authority = "DeGPT 2026. jpeggdev. WP:AISIGNS 'Collaborative communication'."
+blacklist = [
+  "I hope this helps",
+  "Let me know if you'd like",
+  "Let me know if you need",
+  "Feel free to",
+  "is there anything else",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences",
+]
+
+[[contracts]]
+id = "AIS:S03"
+domain = "sycophancy"
+statement = "Delete model self-reference: 'As an AI', 'As a language model', 'Based on the information available', 'As of my last knowledge update'."
+applies_to = ["prose", "documentation", "marketing", "code_comments"]
+authority = "WP:AISIGNS 'Knowledge-cutoff disclaimers'. DeGPT 2026."
+blacklist = [
+  "As an AI",
+  "As a language model",
+  "Based on the information available",
+  "Based on available information",
+  "As of my last knowledge update",
+  "As of my knowledge cutoff",
+  "While specific details are limited",
+  "are not widely documented",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero occurrences",
+]
+
+# =====================================================================
+# STRUCTURAL BANS
+# =====================================================================
+
+[[contracts]]
+id = "AIS:ST01"
+domain = "structural"
+statement = "Do not use negative parallelism constructions ('It's not X, it's Y' / 'Not just X, but Y' / 'Less about X, more about Y')."
+applies_to = ["prose", "documentation", "marketing", "code_comments", "commit_messages"]
+authority = "Washington Post (Merrill et al.) 13 Nov 2025: 'not just X, but Y' variants in 6% of 328,744 July 2025 ChatGPT messages. Dev.to RLHF/DPO analysis March 2026. WP:AISIGNS AIPARALLEL. Referenced in WRITING_STYLE_RULES_GENERIC.toml STYLE:S04."
+evidence_ratio = 0.06
+blacklist_regex = [
+  "it'?s not\\s+(just\\s+)?[^,.;]+[,.;]\\s*it'?s\\s+",
+  "this isn'?t\\s+(just\\s+)?[^,.;]+[,.;]\\s*it'?s\\s+",
+  "not only\\s+[^,]+,\\s*but also\\s+",
+  "not only\\s+[^,]+,?\\s*but\\s+",
+  "less about\\s+[^,]+,\\s*more about\\s+",
+  "no\\s+\\w+,\\s*no\\s+\\w+,\\s*just\\s+",
+]
+match_mode = "regex"
+density_threshold = 1
+density_per_words = 2000
+reviewer_checks = [
+  "max 1 negative-parallelism construction per 2,000 words",
+  "check each occurrence serves a genuine rhetorical purpose",
+]
+
+[[contracts]]
+id = "AIS:ST02"
+domain = "structural"
+statement = "Avoid tricolon density above ~30% of enumerations. Three-item lists are not banned; three-item lists as the default are."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "LinkedIn analysis (Massobrio 2025) 'Triviality and Rhetorical Triplets'. jpeggdev Rule of Three. WP:AISIGNS RO3."
+density_threshold = 0.30
+density_metric = "tricolon_fraction_of_enumerations"
+reviewer_checks = [
+  "no two consecutive paragraphs both using tricolons",
+  "list-item counts vary across the document (not exclusively threes)",
+]
+
+[[contracts]]
+id = "AIS:ST03"
+domain = "structural"
+statement = "Do not close with 'balanced' three-part conclusions: 'the good news / the challenge / a forward-looking closer' pattern."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "WP:AISIGNS 'Outline-like conclusions about challenges and future prospects'. jpeggdev Balanced Conclusion."
+blacklist_regex = [
+  "[Dd]espite (these|its|the)\\s+challenges?[,.]?\\s+",
+]
+match_mode = "regex"
+reviewer_checks = [
+  "no 'Despite these challenges... continues to thrive' close pattern",
+  "conclusion carries a single claim, not three-part symmetry",
+]
+
+[[contracts]]
+id = "AIS:ST04"
+domain = "structural"
+statement = "Do not systematically replace 'is' and 'are' with 'serves as' / 'stands as' / 'represents' / 'marks' / 'features' / 'offers' / 'maintains'."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "WP:AISIGNS 'Avoidance of basic copulatives': 10% drop in 'is'/'are' frequency in 2023 academic writing. Brown et al. PNAS 2025: GPT-4o 'be'-as-main-verb at 63% of human rate."
+blacklist = [
+  "serves as",
+  "serving as",
+  "stands as",
+  "represents a",
+  "marks the",
+  "features a",
+  "offers a",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 2
+density_per_words = 1000
+reviewer_checks = [
+  "combined density of ersatz-copula phrases no more than 2 per 1,000 words",
+  "each usage has a genuine semantic reason beyond 'is/are avoidance'",
+]
+
+[[contracts]]
+id = "AIS:ST05"
+domain = "structural"
+statement = "Delete terminal participial ('-ing') phrases that do not add a fact. 'Reflecting broader trends', 'underscoring its importance', 'contributing to', 'highlighting the', 'ensuring continued relevance', 'showcasing how', 'fostering a sense of', 'encompassing' — all decorative."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Brown et al. PNAS 2025: instruction-tuned LLMs use present participial clauses at 224-527% of human rate (2-5x). WP:AISIGNS 'Superficial analyses'."
+evidence_ratio = 5.27
+blacklist_regex = [
+  ",\\s+(reflecting|underscoring|emphasizing|emphasising|highlighting|showcasing|contributing to|cultivating|fostering|encompassing|ensuring)\\s+",
+]
+match_mode = "regex"
+density_threshold = 1
+density_per_words = 500
+reviewer_checks = [
+  "terminal decorative-participle clauses no more than 1 per 500 words",
+  "each surviving terminal -ing phrase carries a concrete fact",
+]
+
+[[contracts]]
+id = "AIS:ST06"
+domain = "structural"
+statement = "Vary paragraph lengths. Coefficient of variation of paragraph word-counts must exceed 0.40."
+applies_to = ["prose", "documentation"]
+authority = "Kitmul 2026. Pangram 2025. AI paragraph CoV typically 0.15-0.25; human CoV typically 0.40-0.70."
+density_threshold = 0.40
+density_metric = "paragraph_length_coefficient_of_variation_minimum"
+reviewer_checks = [
+  "paragraph-length coefficient of variation at least 0.40",
+  "document contains at least one paragraph shorter than 40 words and at least one longer than 120 words",
+]
+
+[[contracts]]
+id = "AIS:ST07"
+domain = "structural"
+statement = "Vary sentence lengths. Coefficient of variation of sentence word-counts must exceed 0.35."
+applies_to = ["prose", "documentation"]
+authority = "Kitmul 2026 ('sentence length skewness'). Rewritelyapp 2026."
+density_threshold = 0.35
+density_metric = "sentence_length_coefficient_of_variation_minimum"
+reviewer_checks = [
+  "sentence-length coefficient of variation at least 0.35",
+  "document contains at least one sentence shorter than 6 words and at least one longer than 25 words",
+]
+
+[[contracts]]
+id = "AIS:ST08"
+domain = "structural"
+statement = "Em-dash frequency must not exceed human baseline range (Freeburg 2026: human mean 3.23 per 1,000 words across 8 published essays)."
+applies_to = ["prose", "documentation"]
+authority = "Freeburg arXiv:2603.27006 (2026). Human baseline: mean 3.23, range 0.33-17.12 per 1,000 words. Referenced in WRITING_STYLE_RULES_GENERIC.toml STYLE:S02, updated to allow moderate use."
+density_threshold = 5.0
+density_per_words = 1000
+density_metric = "em_dash_per_1000_words"
+reviewer_checks = [
+  "em-dash rate no more than 5.0 per 1,000 words (upper end of human distribution)",
+  "em dashes used for genuine asides/interruptions, not as rhythm-filler",
+]
+
+# =====================================================================
+# RHETORICAL BANS
+# =====================================================================
+
+[[contracts]]
+id = "AIS:R01"
+domain = "rhetorical"
+statement = "Do not use artificial suspense constructions: 'Here's what blew my mind', 'The answer surprised me', 'The crazy part?', 'Plot twist', 'And honestly?'."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Jim Christian 17 Dead Giveaways 2025. jpeggdev."
+blacklist = [
+  "Here's what blew my mind",
+  "The answer surprised me",
+  "The crazy part",
+  "Plot twist",
+  "And honestly",
+  "Here's what separates",
+  "This is what nobody tells you",
+  "The uncomfortable truth",
+  "that's when it clicked",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero artificial-suspense constructions",
+]
+
+[[contracts]]
+id = "AIS:R02"
+domain = "rhetorical"
+statement = "Do not use significance-inflation phrases. State what happened, not its cosmic significance."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "WP:AISIGNS 'Undue emphasis on significance, legacy, and broader trends'. jpeggdev Significance Inflation."
+blacklist = [
+  "marking a pivotal moment",
+  "marking a significant moment",
+  "stands as a testament",
+  "serves as a testament",
+  "underscores the importance",
+  "highlights the importance",
+  "reflects broader trends",
+  "setting the stage for",
+  "cementing its role",
+  "a cornerstone of",
+  "an indelible mark",
+  "deeply rooted in",
+  "nestled in the heart of",
+  "boasts a rich history",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero significance-inflation phrases",
+]
+
+[[contracts]]
+id = "AIS:R03"
+domain = "rhetorical"
+statement = "Do not default to 'both-sides' framing. 'While X is true, it is also important to consider Y' / 'On the one hand ... on the other hand' / 'There are valid arguments on both sides'. Take a position."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Dev.to RLHF/DPO analysis March 2026. Cherryleaf 2026 'AI always presents both sides'."
+blacklist = [
+  "On the one hand",
+  "on the other hand",
+  "There are valid arguments on both sides",
+  "While there are certainly",
+  "Whether you're a",
+  "Whether it's",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 1
+density_per_words = 2000
+reviewer_checks = [
+  "max 1 occurrence per 2,000 words only where the evidence is genuinely balanced",
+  "the piece as a whole takes a position",
+]
+
+[[contracts]]
+id = "AIS:R04"
+domain = "rhetorical"
+statement = "Every specific example must be specific. No 'Consider a marketing team at a mid-sized company', no 'Sarah, a software engineer', no 'A procurement policy that made sense for...'."
+applies_to = ["prose", "documentation", "marketing"]
+authority = "Cherryleaf 2026 ('Generic Specificity, the strongest structural tell')."
+blacklist_regex = [
+  "[Cc]onsider\\s+a\\s+(company|team|organization|organisation|business|firm|startup)",
+  "\\b[A-Z][a-z]+,?\\s+a\\s+(software engineer|data scientist|marketing manager|product manager|designer)\\b",
+  "[Aa]\\s+(leading|major|prominent)\\s+(company|organization|firm|institution)",
+]
+match_mode = "regex"
+density_threshold = 0
+reviewer_checks = [
+  "zero generic-example patterns",
+  "every named example is a real named person, company, or specific event",
+]
+
+[[contracts]]
+id = "AIS:R05"
+domain = "rhetorical"
+statement = "Do not use fake character names common in AI-generated fiction: Elara Voss, Elena Voss, Kael, Lyra, Zephyr, plus character-name defaulting to Emily/Sarah."
+applies_to = ["prose"]
+authority = "Kriss NYT Magazine 3 Dec 2025. Pangram 2025 ('60-70% of character names in ChatGPT/Claude fiction are Emily or Sarah')."
+blacklist = [
+  "Elara Voss",
+  "Elena Voss",
+  "Elara",
+  "Kael",
+  "Lyra",
+  "Zephyr",
+]
+match_mode = "phrase_case_sensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero canonical AI-fiction names without deliberate reason",
+]
+
+# =====================================================================
+# TONE REQUIREMENTS
+# =====================================================================
+
+[[contracts]]
+id = "AIS:TN01"
+domain = "tone"
+statement = "Use contractions where register permits. AI-default rate is ~60% of human rate; target human rate."
+applies_to = ["prose", "marketing", "code_comments", "commit_messages"]
+authority = "Brown et al. PNAS 2025 Table 3: GPT-4o contractions 60% of human rate, Llama 3 70B Instruct 139%, human baseline 18.1 per 1,000 words."
+density_threshold = 8
+density_per_words = 1000
+density_metric = "contractions_per_1000_words_minimum"
+reviewer_checks = [
+  "contractions rate at least 8 per 1,000 words where register permits",
+  "first-person and second-person pronouns present where appropriate",
+]
+
+[[contracts]]
+id = "AIS:TN02"
+domain = "tone"
+statement = "Take a position. At least one evaluative/opinionated claim per document. AI defaults to neutral description."
+applies_to = ["prose", "marketing", "documentation"]
+authority = "Pangram 2025 'AI tends to write essays that could fit a wide variety of possible prompts'. Cherryleaf 2026."
+density_threshold = 1
+density_metric = "opinionated_claims_per_document_minimum"
+reviewer_checks = [
+  "at least one first-person opinion statement per 2,000 words",
+  "at least one evaluative claim that takes a side",
+]
+
+[[contracts]]
+id = "AIS:TN03"
+domain = "tone"
+statement = "Specific numbers, code references, real version numbers beat generic quantifiers. Ban 'many users', 'numerous examples', 'a significant amount'."
+applies_to = ["prose", "documentation", "marketing", "technical_docs"]
+authority = "jpeggdev Tier 2. Cherryleaf 2026 'Generic Specificity'."
+blacklist = [
+  "many users",
+  "numerous examples",
+  "a significant amount",
+  "a significant number of",
+  "a plethora of",
+  "a myriad of",
+  "countless",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero unquantified quantifiers; use specific numbers or named ranges",
+]
+
+# =====================================================================
+# FORMATTING RULES
+# =====================================================================
+
+[[contracts]]
+id = "AIS:F01"
+domain = "formatting"
+statement = "No decorative horizontal rules above every heading. Markdown '---' immediately before a heading is a ChatGPT markdown-leakage pattern."
+applies_to = ["prose", "documentation", "technical_docs"]
+authority = "Freeburg arXiv:2603.27006. WP:AISIGNS 'Thematic breaks before headings'."
+blacklist_regex = [
+  "^\\s*---\\s*$\\s*^\\s*#",
+  "^\\s*\\*\\*\\*\\s*$\\s*^\\s*#",
+]
+match_mode = "regex_multiline"
+density_threshold = 0
+reviewer_checks = [
+  "no horizontal rule immediately above any heading",
+]
+
+[[contracts]]
+id = "AIS:F02"
+domain = "formatting"
+statement = "No emoji in section headings of professional technical docs. '## Features ✨' is a near-certain AI signature."
+applies_to = ["documentation", "technical_docs", "code_comments"]
+authority = "Abdullah 2025 'Signs: How to Spot AI-Written Code'. WP:AISIGNS 'Emojis'."
+blacklist_regex = [
+  "^#{1,6}\\s.*[\\U0001F300-\\U0001FAFF\\u2600-\\u27BF\\u2700-\\u27BF✨🚀💡📌🎯🔥]",
+]
+match_mode = "regex_multiline"
+density_threshold = 0
+reviewer_checks = [
+  "zero emoji in headings",
+]
+
+[[contracts]]
+id = "AIS:F03"
+domain = "formatting"
+statement = "Scattered inline bold inside narrative paragraphs is an AI tell. Bold only on section headings, key terms at first definition, or explicit warnings."
+applies_to = ["prose", "documentation"]
+authority = "WP:AISIGNS 'Overuse of boldface'. Referenced in WRITING_STYLE_RULES_GENERIC.toml STYLE:S05."
+density_threshold = 1
+density_per_words = 200
+density_metric = "inline_bold_phrases_per_200_words_maximum"
+reviewer_checks = [
+  "at most 1 bold phrase per 200 words of body prose",
+  "no bold used for emphasis on adjectives or verbs inside paragraphs",
+]
+
+[[contracts]]
+id = "AIS:F04"
+domain = "formatting"
+statement = "Delete ChatGPT/LLM markup leakage artifacts from pasted output."
+applies_to = ["prose", "documentation", "marketing", "technical_docs", "code_comments"]
+authority = "WP:AISIGNS 'turn0search0', 'contentReference', 'oai_citation', 'utm_source=openai', 'access-date=2025-XX-XX', 'attached_file', 'grok_card'."
+blacklist_regex = [
+  "turn\\d+(search|image|news|file)\\d+",
+  ":contentReference\\[oaicite:",
+  "oai_citation:",
+  "utm_source=(openai|chatgpt\\.com|copilot\\.com)",
+  "referrer=grok\\.com",
+  "access-date=\\d{4}-[Xx]{2}-[Xx]{2}",
+  "\\[attached_file:\\d+\\]",
+  "\\[web:\\d+\\]",
+  "\\x3Cgrok_card",
+  "\\{\"attribution\":\\{\"attributableIndex\"",
+  "\\[Your Name\\]",
+  "\\[INSERT_[A-Z_]+\\]",
+  "\\[PASTE_[A-Z_]+\\]",
+  "\\[Describe the specific",
+]
+match_mode = "regex"
+density_threshold = 0
+reviewer_checks = [
+  "zero markup-leakage artifacts",
+]
+
+# =====================================================================
+# DOMAIN-SPECIFIC: CODE COMMENTS
+# =====================================================================
+
+[[contracts]]
+id = "AIS:CC01"
+domain = "domain_specific_code"
+statement = "No comments that restate the code in English. '// increment counter' above 'counter++;' is an AI signature."
+applies_to = ["code_comments"]
+authority = "Codequiry 2026. Abdullah 2025."
+density_threshold = 0.15
+density_metric = "trivial_restatement_comments_fraction_maximum"
+reviewer_checks = [
+  "no 'Calculate the X' comment above an obvious calculation",
+  "no 'Return the result' comment above a return statement",
+  "comments explain WHY, not WHAT",
+]
+
+[[contracts]]
+id = "AIS:CC02"
+domain = "domain_specific_code"
+statement = "No decorative divider banner comments like '// =========== SECTION ============'."
+applies_to = ["code_comments"]
+authority = "Abdullah 2025. Codequiry 2026."
+blacklist_regex = [
+  "^\\s*(//|#)\\s*={5,}",
+  "^\\s*(//|#)\\s*-{10,}",
+  "^\\s*(//|#)\\s*\\*{5,}",
+]
+match_mode = "regex_multiline"
+density_threshold = 0
+reviewer_checks = [
+  "zero decorative comment banners",
+]
+
+[[contracts]]
+id = "AIS:CC03"
+domain = "domain_specific_code"
+statement = "No 'TODO: implement later' comments when implementation is in scope. No 'This handles all edge cases' blanket claims."
+applies_to = ["code_comments"]
+authority = "Codequiry 2026."
+blacklist = [
+  "TODO: implement later",
+  "TODO: implement",
+  "This handles all edge cases",
+  "handles all cases",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "TODOs reference specific work items, not 'implement later'",
+  "no blanket edge-case claims",
+]
+
+# =====================================================================
+# DOMAIN-SPECIFIC: DOCUMENTATION
+# =====================================================================
+
+[[contracts]]
+id = "AIS:DC01"
+domain = "domain_specific_docs"
+statement = "Real docs name specific versions. Ban vague 'ensure you have X installed'."
+applies_to = ["documentation", "technical_docs"]
+authority = "Alibaba OSS analysis 2026 ('absence of versioned specificity')."
+density_threshold = 2
+density_metric = "version_strings_per_document_minimum"
+reviewer_checks = [
+  "at least 2 specific version pins (e.g., pinning Python 3.11+ or node 20.11.1)",
+  "no 'ensure you have X installed' without version",
+]
+
+[[contracts]]
+id = "AIS:DC02"
+domain = "domain_specific_docs"
+statement = "No marketing copy in READMEs: 'seamlessly integrate', 'empower developers', 'revolutionise your workflow'."
+applies_to = ["documentation", "technical_docs"]
+authority = "Abdullah 2025. Cross-ref to AIS:L09, AIS:L16."
+blacklist = [
+  "seamlessly integrate",
+  "empower developers",
+  "revolutionize your workflow",
+  "revolutionise your workflow",
+  "supercharge your",
+  "take your X to the next level",
+  "elevate your",
+  "next-generation",
+]
+match_mode = "phrase_case_insensitive"
+density_threshold = 0
+reviewer_checks = [
+  "zero marketing-register phrases in technical docs",
+]
+
+# =====================================================================
+# DOMAIN-SPECIFIC: COMMIT MESSAGES
+# =====================================================================
+
+[[contracts]]
+id = "AIS:CM01"
+domain = "domain_specific_commits"
+statement = "Imperative mood, short, factual. Ban 'Concise edit summary: Improved clarity, flow, and readability' and similar AI-formal summary patterns."
+applies_to = ["commit_messages"]
+authority = "WP:AISIGNS 'Overwhelmingly exhaustive edit summaries'."
+blacklist_regex = [
+  "^Concise edit summary:",
+  "^Improved clarity,?\\s+flow,?\\s+and readability",
+  "^This (commit|change) (ensures|provides|implements)",
+]
+match_mode = "regex_multiline"
+density_threshold = 0
+reviewer_checks = [
+  "commit subject is imperative mood, under 72 characters",
+  "no 'ensured / avoided' meta-commentary",
+]
+
+# =====================================================================
+# INTEGRITY / ANTI-HALLUCINATION
+# =====================================================================
+
+[[contracts]]
+id = "AIS:IN01"
+domain = "integrity"
+statement = "Every citation must resolve. Every DOI must lead to the cited paper, not an unrelated one. Every book citation must include a page number or verifiable URL."
+applies_to = ["prose", "documentation", "marketing", "technical_docs"]
+authority = "WP:AISIGNS 'DOIs that lead to unrelated articles'. NYT / Alex Preston / Guardian incident March 2026."
+reviewer_checks = [
+  "every URL resolves",
+  "every DOI resolves to the exact paper cited",
+  "every book reference has a page number or online link",
+  "every quote attributed to a real person appears in a verifiable source",
+]
+
+[[contracts]]
+id = "AIS:IN02"
+domain = "integrity"
+statement = "No AI-authored anecdotes passed off as personal experience. No 'I spoke with dozens of engineers' if you didn't. No 'In my experience' if the experience was model-generated."
+applies_to = ["prose", "marketing"]
+authority = "NYT / Alex Preston / Guardian incident March 2026. The Globe and Mail standards editor April 2026."
+reviewer_checks = [
+  "every first-person claim is the author's own",
+  "no fabricated quotes",
+  "no fabricated numbers",
+]
+
+# =====================================================================
+# EVIDENCE MATRIX
+# =====================================================================
+
+[[claims]]
+id = "E01"
+claim = "Lexical Tier 1 bans are each backed by at least one controlled study with measured overrepresentation ratio."
+
+[[claims]]
+id = "E02"
+claim = "Structural bans (negative parallelism, copula avoidance, terminal participials, tricolon density, paragraph/sentence variance, em-dash frequency) are each backed by quantified primary research."
+
+[[claims]]
+id = "E03"
+claim = "Rhetorical and tone rules are grounded in RLHF/DPO mechanism (Juzek & Ward 2025) and the Brown et al. Biber-feature analysis."
+
+[[claims]]
+id = "E04"
+claim = "Formatting rules reflect the Freeburg 'markdown leakage' mechanism and WP:AISIGNS catalogued leakage artifacts."
+
+[[claims]]
+id = "E05"
+claim = "Domain-specific rules (code comments, docs, commit messages) are grounded in Codequiry 2026, Abdullah 2025, and WP:AISIGNS 'Overwhelmingly exhaustive edit summaries'."
+
+[[claims]]
+id = "E06"
+claim = "Integrity rules are grounded in the March 2026 NYT/Preston/Guardian AI-plagiarism incident and WP:AISIGNS hallucinated-citation examples."
+
+[[evidence]]
+id = "EV01"
+artifact_path = "style_guide.md"
+summary = "12,000-word rationale document with full cited passages from Brown/Kobak/Juzek/Freeburg/McGovern/Zamaraeva, primary-source tables, before/after worked examples, and the pre-publish checklist. Each contract here cross-references a section in this document."
+
+[[evidence]]
+id = "EV02"
+artifact_path = "release/v1/review-readiness/RELEASE.toml"
+summary = "Precedent contract-declaration manifest confirming the schema used here."
+
+[[evidence]]
+id = "EV03"
+artifact_path = "examples/WRITING_STYLE_RULES_GENERIC.toml"
+summary = "Predecessor style-rules contract-declaration with 20 rules across structural, word_choice, tone, remediation domains. This policy supersedes it with evidence-backed density thresholds and primary-source citations."
+
+[[matrix]]
+id = "M01"
+claim_id = "E01"
+evidence_id = "EV01"
+scope_covered = "delve (1374.92x), tapestry (155x), intricate (772.85x), vibrant (1260x), realm (381.10x), underscore (903.61x), showcase (422.45x), boasts (918.18x), advancements (277.59x), groundbreaking (330.42x), plus GPT-4o narrative continuation words (camaraderie 162x, palpable 95x, fleeting 84x, etc.)"
+known_exclusions = [
+  "Evidence ratios are drawn from scientific-abstracts corpus (Juzek-Ward) and narrative-continuation corpus (Brown et al.). Ratios may differ in other genres (e.g., legal, technical documentation).",
+  "Ratios decay over time as models are fine-tuned away from specific tells. Treat ratios as historical fingerprints, not current-model predictions.",
+]
+
+[[matrix]]
+id = "M02"
+claim_id = "E02"
+evidence_id = "EV01"
+scope_covered = "Negative parallelism (WaPo 6%), present participial clauses (Brown 2-5x), copula avoidance (2023 10% is/are drop), paragraph-length CoV threshold, em-dash 12-model suppression gradient table"
+known_exclusions = [
+  "Sentence-length CoV thresholds are heuristic, not from a single controlled study.",
+  "Em-dash human baseline is 8 essays (Freeburg 2026 limitation); broader baseline needed for register-specific calibration.",
+]
+
+[[matrix]]
+id = "M03"
+claim_id = "E03"
+evidence_id = "EV01"
+scope_covered = "RLHF/DPO contrastive-objective explanation of antithesis and both-sides framing; Brown et al. Biber table for contractions, first/second person, participle rates, copula avoidance"
+known_exclusions = [
+  "Opinion-density requirement is judgment-based; cannot be fully automated.",
+  "Register-appropriateness of contractions varies by domain (legal/regulated domains correctly avoid them).",
+]
+
+[[matrix]]
+id = "M04"
+claim_id = "E04"
+evidence_id = "EV01"
+scope_covered = "Freeburg 5-step genealogy (training-data saturation, structural internalisation, dual-register, RLHF amplification); WP:AISIGNS Markdown / Thematic-breaks / Emoji / Reference markup bugs / utm_source parameters"
+known_exclusions = [
+  "Emoji detection regex covers common ranges but not every Unicode emoji block.",
+  "Markdown-leak rules apply to Markdown-target documents; other formats need adaptation.",
+]
+
+[[matrix]]
+id = "M05"
+claim_id = "E05"
+evidence_id = "EV01"
+scope_covered = "Codequiry 2026 AI-code patterns (over-commenting, decorative banners, synthetic edge cases); Abdullah 2025 (emoji in headings); WP:AISIGNS edit-summary pattern"
+known_exclusions = [
+  "Code-comment detection is language-agnostic regex; language-specific comment-style rules not included.",
+  "Commit-message rules cover conventional-commits style; team-specific conventions require local override.",
+]
+
+[[matrix]]
+id = "M06"
+claim_id = "E06"
+evidence_id = "EV01"
+scope_covered = "Citation integrity (URLs, DOIs, page numbers), fabricated-anecdote ban, fabricated-quote ban"
+known_exclusions = [
+  "Integrity rules require human verification and cannot be fully automated by the linter.",
+  "The linter flags candidates for review; author attestation remains required.",
+]
+
+# =====================================================================
+# COMPUTED SUMMARY
+# =====================================================================
+
+[computed]
+total_rules = 56
+domains = [
+  "lexical_tier1",
+  "lexical_tier2",
+  "opener_banned",
+  "closer_banned",
+  "sycophancy",
+  "structural",
+  "rhetorical",
+  "tone",
+  "formatting",
+  "domain_specific_code",
+  "domain_specific_docs",
+  "domain_specific_commits",
+  "integrity",
+]
+scannable_checks = [
+  "AIS:L01", "AIS:L02", "AIS:L03", "AIS:L04", "AIS:L05", "AIS:L06", "AIS:L07",
+  "AIS:L08", "AIS:L09", "AIS:L10", "AIS:L11", "AIS:L12", "AIS:L13", "AIS:L14",
+  "AIS:L15", "AIS:L16", "AIS:L17", "AIS:L18", "AIS:L20",
+  "AIS:O01", "AIS:O02", "AIS:O03", "AIS:O04",
+  "AIS:C01", "AIS:C02",
+  "AIS:S01", "AIS:S02", "AIS:S03",
+  "AIS:ST01", "AIS:ST03", "AIS:ST04", "AIS:ST05", "AIS:ST06", "AIS:ST07", "AIS:ST08",
+  "AIS:R01", "AIS:R02", "AIS:R03", "AIS:R04", "AIS:R05",
+  "AIS:TN01", "AIS:TN03",
+  "AIS:F01", "AIS:F02", "AIS:F03", "AIS:F04",
+  "AIS:CC02", "AIS:CC03",
+  "AIS:DC02",
+  "AIS:CM01",
+]
+human_judgment_checks = [
+  "AIS:ST02",
+  "AIS:TN02",
+  "AIS:CC01",
+  "AIS:DC01",
+  "AIS:IN01",
+  "AIS:IN02",
+]
+coverage_gaps = [
+  "Evidence ratios are historical and decay as models are fine-tuned. Re-audit against current SOTA models annually.",
+  "Linter cannot enforce opinion-density (AIS:TN02), tricolon semantic redundancy (AIS:ST02), or integrity claims (AIS:IN01/AIS:IN02) without human review.",
+  "Register-specific overrides (legal, regulated, formal academic) not encoded; authors must apply domain judgment.",
+  "Non-English prose rules are out of scope for this v1; Biber features and focal words are English-specific.",
+  "POS-n-gram fingerprint detection (McGovern et al. 2025) would require a statistical classifier separate from rule-based linting.",
+]

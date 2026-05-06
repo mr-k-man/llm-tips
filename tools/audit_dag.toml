@@ -1,0 +1,568 @@
+# Writing Audit and Fix DAG
+# Coordinates an agent fleet that audits prose against the Anti-AI-Tell Style
+# Guide and rewrites or surgically edits offending pieces.
+#
+# RULESET:
+#   tools/style_policy.toml      (machine-readable contract)
+#   style_guide.md            (local rationale, ~12k words)
+#   https://github.com/mr-k-man/llm-tips/blob/main/style_guide.md  (canonical)
+#
+# DIVERGENCE NOTE:
+#   The mr-k-man/llm-tips canonical guide is a strict superset of the local
+#   style_guide.md. The canonical adds:
+#     §4.10  Filler-phrase replacements (Berman 2026 Humanizer kit table)
+#     §5.14  Performed authenticity / second-generation tells:
+#              - philosophical mic drops ("Maybe both.", "And honestly?")
+#              - performed balanced contrasts ("X but not Y")
+#              - brand-manifesto structure (one-word-per-paragraph themes)
+#              - parenthetical personality injection ("(if that makes sense)")
+#     §6.9   False ranges ("from X to Y" where X,Y are not ordinal endpoints)
+#     §13    Checklist items for the above three sections
+#   This DAG audits against the canonical (superset). U02 must load both files
+#   and prefer the canonical when sections conflict.
+#
+# LINTER:
+#   tools/lint_writing_style.py                (regex/density scans)
+#
+# THRESHOLD POLICY (drives U06 triage):
+#   per-piece hits >= 3 (any combination of Tier-1 vocab, banned openers/closers,
+#   "not X, but Y", balanced-conclusion, copula avoidance) -> rewrite from scratch
+#   per-piece hits 1-2 -> surgical edit
+#   per-piece hits 0   -> verified-clean, no action
+#   "Hits" are counted per pre-publish checklist in the style guide §13.
+#
+# HARD INVARIANTS:
+#   - `blocks` is exact inverse of direct `depends_on`
+#   - each `ART:` id has exactly one producer
+#   - each `consumes` entry matches an existing `produces` entry exactly
+#   - `layer` ordering follows dependency ordering
+#   - `[computed]` values are derived from `units`, never guessed
+#
+# STATUS VALUES: "pending" | "in_progress" | "done" | "blocked" | "deferred"
+# TIER VALUES:   1 = current release
+
+[meta]
+title = "Anti-AI-Tell writing audit and fix workflow"
+spec = "tools/style_policy.toml"
+decomposition = "tools/audit_dag.toml"
+created = "2026-05-06"
+total_units = 10
+tier1_units = [
+  "U01",
+  "U02",
+  "U03",
+  "U04",
+  "U05",
+  "U06",
+  "U07",
+  "U08",
+  "U09",
+  "U10",
+]
+tier2_units = []
+tier3_units = []
+
+# ============================================================================
+# LAYER 0: Inputs (parallel, no dependencies)
+# ============================================================================
+
+[units.U01]
+name = "scope-inventory"
+summary = "Enumerate every prose target under audit (articles, READMEs, doc pages, code-comment blocks, commit messages in range) with word counts, source paths, and content type."
+layer = 0
+tier = 1
+status = "pending"
+depends_on = []
+blocks = [
+  "U03",
+  "U04",
+  "U05",
+]
+estimated_loc = 80
+spec_sections = ["Scope"]
+spec_anchors = ["scope/inputs"]
+files_create = [
+  "build/audit/inventory.json",
+]
+files_modify = []
+acceptance = [
+  "inventory.json lists every audited file with absolute path, content_type in {article|doc|readme|code_comment|commit_message|pr_body}, word_count, last_modified.",
+  "Files matching .gitignore, vendor directories, and .venv are excluded.",
+  "Total word count matches `wc -w` on the union of files within +/- 1%.",
+]
+produces = ["ART:writing-inventory"]
+consumes = []
+critical_decisions = [
+  "Content-type classification drives which §9 domain rules apply (e.g., code comments use §9.3, commit messages use §9.5).",
+]
+constraints = [
+  "Do not include generated files, lockfiles, or third-party content.",
+]
+failure_modes = [
+  "Misclassifying a marketing page as technical doc would skip the §9.4 sensitivity multiplier — abort if classifier confidence < 0.8.",
+]
+rationale = "Every downstream scan needs a stable, classified set of inputs. Recomputing the inventory mid-run invalidates triage scores."
+
+[units.U02]
+name = "rule-set-load"
+summary = "Compile the canonical mr-k-man/llm-tips style_guide.md plus tools/style_policy.toml into an in-memory rule set: Tier-1 vocab, §4.10 filler replacements, opener/closer bans, structural patterns from §5 (including §5.14 second-generation tells), §6.9 false ranges, density thresholds per §13."
+layer = 0
+tier = 1
+status = "pending"
+depends_on = []
+blocks = [
+  "U03",
+  "U04",
+  "U05",
+]
+estimated_loc = 160
+spec_sections = ["§4", "§4.10", "§5", "§5.14", "§6", "§6.9", "§7", "§8"]
+spec_anchors = [
+  "rules/vocabulary",
+  "rules/filler-replacements",
+  "rules/structure",
+  "rules/performed-authenticity",
+  "rules/false-ranges",
+  "rules/voice",
+  "rules/formatting",
+]
+files_create = [
+  "build/audit/rules.json",
+]
+files_modify = []
+acceptance = [
+  "rules.json contains every Tier-1 banned word from §4.3 and every banned opener/closer from §4.5/§4.6 with exact-match and word-boundary regex.",
+  "rules.json includes the §4.10 filler-replacement table (≥18 phrase->replacement pairs from the Berman 2026 Humanizer kit) so U03 can offer fix suggestions, not just flag.",
+  "rules.json includes the four §5.14 second-generation tell patterns: philosophical-mic-drop phrase list ('Maybe both.', 'And honestly?', 'Maybe that's the point.', 'I think that says something.', 'If that's not [noun], I don't know what is.'), performed-balanced-contrast detector ('X but not Y' / 'simple enough to use, powerful enough to matter' shape), brand-manifesto structure detector (one-word-paragraph-theme heuristic), and parenthetical-personality-injection list ('(and honestly?)', '(not that I'm complaining)', '(if that makes sense)', '(or something like that)', '(maybe that's the point)').",
+  "rules.json includes the §6.9 false-range detector ('from X to Y' where neither endpoint is in an ordinal scale: dates, sizes, levels, prices).",
+  "Density thresholds (em dashes per 1000 words, 'not X but Y' per piece, terminal-participial per 300 words) match §13.",
+  "Loading is idempotent: rules.json hash is identical across re-runs of identical input.",
+  "When the canonical guide and the local STYLE_POLICY_ANTI_AI_TELL.toml conflict, canonical wins and the conflict is recorded in rules.json under `divergences`.",
+]
+produces = ["ART:rule-set"]
+consumes = []
+critical_decisions = [
+  "Tier-1 words are exact-match bans. Restricted words are density-bounded. §4.10 filler phrases are deletion-or-replacement (not exact-ban). Load each category with its own action verb, not a single 'banned' list.",
+  "§5.14 second-generation tells must be loaded even when not present in the local TOML, because the canonical guide treats them as the highest-priority new failure mode (cleaning a §4 tell often produces a §5.14 one in its place).",
+]
+constraints = [
+  "Do not edit either source file during loading. Compile to a derived JSON only.",
+  "The rules.json schema must record source provenance per rule (canonical vs. local) so U06 weights can differentiate.",
+]
+failure_modes = [
+  "If the contract file fails its own validator, abort the run — auditing against a broken ruleset produces noise.",
+  "If the canonical guide is unreachable (offline run), fall back to the local TOML and emit a warning that §4.10/§5.14/§6.9 detection will be incomplete.",
+]
+rationale = "All three Layer-1 scans share the same rule set. Parsing once and broadcasting prevents drift between scans. The canonical-superset rule prevents the audit from missing whichever generation of tell is currently in fashion."
+
+# ============================================================================
+# LAYER 1: Audits (parallel, all consume inventory + rule set)
+# ============================================================================
+
+[units.U03]
+name = "vocabulary-scan"
+summary = "Run regex scans for §4 banned and restricted vocabulary plus §4.10 filler-phrase replacements across every file in the inventory. Emit per-file hit list with word, line, column, tier, and (for §4.10) suggested replacement."
+layer = 1
+tier = 1
+status = "pending"
+depends_on = [
+  "U01",
+  "U02",
+]
+blocks = ["U06"]
+estimated_loc = 260
+spec_sections = ["§4", "§4.10"]
+spec_anchors = ["rules/vocabulary", "rules/filler-replacements"]
+files_create = [
+  "build/audit/findings_vocab.json",
+]
+files_modify = []
+acceptance = [
+  "Every Tier-1 hit is reported with file, line, col, word, and tier='absolute-ban'.",
+  "Restricted-density hits are aggregated per file: word, count, threshold, density-per-1000-words.",
+  "Every §4.10 filler-phrase hit ('In order to', 'Due to the fact that', 'At this point in time', 'Has the ability to', 'In the event that', etc.) is reported with the suggested replacement from the rule set so U08 can apply it directly.",
+  "False-positive suppressions for legitimate uses (e.g., 'tapestry' in a textile context) are recorded with a justification field, not silently dropped.",
+  "Re-run on identical input produces byte-identical output.",
+]
+produces = ["ART:vocab-findings"]
+consumes = [
+  "ART:writing-inventory",
+  "ART:rule-set",
+]
+critical_decisions = [
+  "Restricted words are scored per piece, not per sentence — the piece is the unit of analysis (§4 preface).",
+]
+constraints = [
+  "Word boundaries must respect markdown syntax (e.g., 'underscore' inside a code fence is not a hit).",
+]
+failure_modes = [
+  "Greedy regex over markdown links would flag URL components as Tier-1 words — must use word-boundary anchors that ignore link targets.",
+]
+rationale = "Vocabulary is the cheapest and highest-precision scan. Surfacing it first lets U06 triage the obvious rewrites without waiting on slower structural analysis."
+
+[units.U04]
+name = "structural-scan"
+summary = "Detect §5 structural tells: 'It's not X, it's Y' and variants, tricolons, em-dash density, copula avoidance ('serves as', 'stands as', 'boasts'), terminal-participial phrases, paragraph-length variance, balanced-conclusion scaffold, opener/closer bans, §5.14 second-generation tells (philosophical mic drops, performed balanced contrasts, brand-manifesto structure, parenthetical personality injection), and §6.9 false ranges."
+layer = 1
+tier = 1
+status = "pending"
+depends_on = [
+  "U01",
+  "U02",
+]
+blocks = ["U06"]
+estimated_loc = 480
+spec_sections = ["§5", "§5.14", "§4.5", "§4.6", "§6.9"]
+spec_anchors = [
+  "rules/structure",
+  "rules/openers",
+  "rules/closers",
+  "rules/performed-authenticity",
+  "rules/false-ranges",
+]
+files_create = [
+  "build/audit/findings_structure.json",
+]
+files_modify = []
+acceptance = [
+  "'not X, but Y' / 'not just X, it's Y' / 'not only X, but Y' / 'less about X, more about Y' detected with a positive rate >=95% on a 50-sample fixture and false-positive rate <5%.",
+  "Em-dash counts per 1000 words match Freeburg 2026 baseline math.",
+  "Paragraph-length coefficient of variation computed per file; CV<0.2 flagged.",
+  "Copula avoidance counted: instances of 'serves as'|'stands as'|'represents'|'marks'|'boasts'|'features' as predicate per 1000 words.",
+  "Terminal-participial phrases (sentences ending in '-ing PHRASE' decoratively) detected with at least the dictionary from §5.5: 'reflecting', 'underscoring', 'emphasising', 'highlighting', 'showcasing', 'contributing to', 'cultivating', 'fostering', 'ensuring'.",
+  "§5.14 philosophical-mic-drop hits flagged: end-of-paragraph one-liners matching the dictionary from rules.json, plus the 'If that's not [noun], I don't know what is' template.",
+  "§5.14 performed-balanced-contrast hits flagged: sentence-level 'X but not Y' where X and Y are syntactically parallel adjective phrases or verb phrases (uses dep parse, not pure regex).",
+  "§5.14 brand-manifesto structure flagged when ≥3 consecutive paragraphs each have a one- or two-word topic label (Identity / Function / Values / Mission / Reflection pattern).",
+  "§5.14 parenthetical personality injections flagged: '(and honestly?)', '(not that I'm complaining)', '(if that makes sense)', '(or something like that)', '(maybe that's the point)' and close variants.",
+  "§6.9 false-range hits flagged: 'from X to Y' constructions where neither X nor Y is in an ordinal class (date, size, level, price) — verified against rules.json ordinal-class allowlist.",
+]
+produces = ["ART:structure-findings"]
+consumes = [
+  "ART:writing-inventory",
+  "ART:rule-set",
+]
+critical_decisions = [
+  "Antithesis detection requires a parser, not just regex — distinguish 'not X, but Y' (banned) from 'not X. Y is...' (acceptable). Use spaCy dep parse or equivalent.",
+  "Tricolon detection looks at parallel lists of exactly three nouns or verbs at >30% of all enumerations in a piece (§5.2 threshold).",
+  "§5.14 patterns are the second-generation failure mode: a piece that scores zero on §4 but positive on §5.14 has been 'humanized' badly. Score these at full weight in U06 — do not discount them as derivative.",
+  "§6.9 false ranges require an ordinal-class oracle (dates, sizes, levels, prices); 'from the singularity to dark matter' fails the check, 'from 1995 to 2026' passes.",
+]
+constraints = [
+  "Do not flag legitimate three-item lists where the count is content-driven (e.g., 'red, green, blue').",
+  "Em-dash detection must distinguish em (—), en (–), and double-hyphen (--).",
+]
+failure_modes = [
+  "Parser timeout on long pieces — enforce a 30s per-file budget and emit a 'parse-skipped' marker rather than corrupting the findings file.",
+]
+rationale = "Structural tells survive vocabulary swaps (§12.1 swap-and-pray). Detecting them is the highest-value audit step."
+
+[units.U05]
+name = "voice-and-format-audit"
+summary = "Audit §6 rhetorical patterns (artificial suspense, false precision, both-sides framing, motivational closes), §7 voice (first/second-person rate, contractions, register variation), and §8 formatting (bullet density, bold density, emoji, markdown leakage, ChatGPT-specific artifacts like turn0search0)."
+layer = 1
+tier = 1
+status = "pending"
+depends_on = [
+  "U01",
+  "U02",
+]
+blocks = ["U06"]
+estimated_loc = 280
+spec_sections = ["§6", "§7", "§8"]
+spec_anchors = ["rules/rhetoric", "rules/voice", "rules/format"]
+files_create = [
+  "build/audit/findings_voice_format.json",
+]
+files_modify = []
+acceptance = [
+  "Per-piece counts: first-person pronouns / 1000 words, second-person pronouns / 1000 words, contraction rate, exclamation rate.",
+  "ChatGPT artifact scan catches `turn0search`, `oai_citation`, `:contentReference[oaicite:N]`, `utm_source=openai|chatgpt|copilot`, `[Your Name]` template leftovers, `access-date=YYYY-XX-XX` placeholders. Single grep run per §8.6.",
+  "Bold-density per section computed; >1 bolded span per section flagged for body prose (§8.2).",
+  "Bullet-density flagged when >40% of an article body is bulleted (§8.1).",
+  "Sycophantic chatbot openers/closers ('Great question!', 'I hope this helps!') flagged anywhere in piece (§4.8).",
+]
+produces = ["ART:voice-format-findings"]
+consumes = [
+  "ART:writing-inventory",
+  "ART:rule-set",
+]
+critical_decisions = [
+  "First-person pronoun rate is content-dependent — flag only when 0 first-person and 0 second-person across a >800-word essay (§7.2).",
+  "Code comments are exempt from the bullet/bold rules.",
+]
+constraints = [
+  "Do not flag emoji in files where the content_type permits them (per §8.3 'brand voice').",
+]
+failure_modes = [
+  "Emoji codepoint detection that misses ZWJ-joined sequences would underreport — use a tested grapheme-cluster library.",
+]
+rationale = "Voice and formatting are the long-tail tells. Combined with U03 and U04 they cover the entire §13 checklist."
+
+# ============================================================================
+# LAYER 2: Triage
+# ============================================================================
+
+[units.U06]
+name = "triage-and-score"
+summary = "Reduce the three findings files into a per-piece score (hit count + severity), classify each piece into rewrite|edit|clean, and produce a prioritized worklist. Rewrite threshold = 3+ hits (§13)."
+layer = 2
+tier = 1
+status = "pending"
+depends_on = [
+  "U03",
+  "U04",
+  "U05",
+]
+blocks = [
+  "U07",
+  "U08",
+]
+estimated_loc = 180
+spec_sections = ["§12.4", "§13"]
+spec_anchors = ["rules/triage", "rules/checklist"]
+files_create = [
+  "build/audit/triage.json",
+  "build/audit/triage_report.md",
+]
+files_modify = []
+acceptance = [
+  "Every file in the inventory appears exactly once in triage.json with classification in {rewrite, edit, clean} and an integer hit_count.",
+  "Weights: Tier-1 vocab, antithesis, balanced-conclusion, and all four §5.14 second-generation patterns score 1.0. §4.10 filler phrases and restricted-density violations score 0.5. §6.9 false ranges score 0.5. Voice/format hits score 0.25.",
+  "Pieces with hit_count >= 3 (weighted sum) are classified 'rewrite' (§13 threshold).",
+  "Pieces with 1 <= hit_count < 3 are classified 'edit'.",
+  "Pieces with 0 hits are classified 'clean' and skipped in U07/U08.",
+  "triage_report.md is human-readable, sorted by descending hit_count, and includes the exact phrase locations.",
+]
+produces = ["ART:triage-report"]
+consumes = [
+  "ART:vocab-findings",
+  "ART:structure-findings",
+  "ART:voice-format-findings",
+]
+critical_decisions = [
+  "Weights are deliberate: structural tells outscore vocabulary because vocabulary swaps fail (§12.1) but structure changes don't.",
+  "Threshold of 3 follows §13's 'A piece scoring 3 or more hits should be rewritten'.",
+]
+constraints = [
+  "Triage is read-only — never edit source files in this unit.",
+]
+failure_modes = [
+  "If U03/U04/U05 disagree about file hashes, the inventory drifted mid-run — abort and rerun from U01.",
+]
+rationale = "A single triage gate prevents the rewrite path and the edit path from racing on the same file."
+
+# ============================================================================
+# LAYER 3: Fixes (parallel; triage routes each file to exactly one path)
+# ============================================================================
+
+[units.U07]
+name = "rewrite-flagged-pieces"
+summary = "For every piece classified 'rewrite' (hit_count >= 3), discard the existing prose and write a fresh draft from the original notes/intent following §12.4. Do not edit sentence-by-sentence."
+layer = 3
+tier = 1
+status = "pending"
+depends_on = ["U06"]
+blocks = ["U09"]
+estimated_loc = 850
+spec_sections = ["§2", "§3", "§12.4"]
+spec_anchors = ["rules/human-baseline", "rules/principles", "rules/rewrite-procedure"]
+files_create = []
+files_modify = [
+  "<files-listed-as-rewrite-in-triage>",
+]
+acceptance = [
+  "Every file with classification='rewrite' in triage.json has been replaced with a new draft.",
+  "New drafts pass the §13 checklist on a fresh U03/U04/U05 run with hit_count <= 1.",
+  "Original intent is preserved: an editor reading old vs. new agrees the claims and conclusions are unchanged.",
+  "No sentence in the new draft is a paraphrase-distance < 0.3 of any sentence in the old draft (anti-swap-and-pray check).",
+]
+produces = ["ART:rewritten-files"]
+consumes = ["ART:triage-report"]
+critical_decisions = [
+  "Rewriting from scratch is faster than sentence-by-sentence editing (§12.4) and produces better output. This is a procedure, not a style choice.",
+  "Use the AI draft as research notes — extract claims, examples, and structure outline only; rewrite the prose.",
+]
+constraints = [
+  "Cited facts, version numbers, and named entities must carry over verbatim — they are content, not style (§3 P1).",
+  "Do not introduce new claims that lack source support.",
+]
+failure_modes = [
+  "Rewrite that retains the same paragraph structure will fail §5.9 paragraph-uniformity check on regression — explicitly vary paragraph lengths.",
+  "Rewriting without preserving sources risks hallucinated citations (§6.3, NYT/Preston incident).",
+]
+rationale = "§12 establishes that rewriting beats editing for AI drafts. The triage threshold of 3 hits is empirically the point where surgical edits cost more than a rewrite."
+
+[units.U08]
+name = "surgical-edit-low-hit-pieces"
+summary = "For every piece classified 'edit' (1-2 hits), apply targeted fixes per §12.4 step list: delete Tier-1 words, delete hedges, delete 'not X, but Y' constructions, delete decorative terminal participials, apply §4.10 filler-phrase replacements, strip §5.14 philosophical mic drops and parenthetical personality injections, rewrite §6.9 false ranges as plain lists, vary paragraph length."
+layer = 3
+tier = 1
+status = "pending"
+depends_on = ["U06"]
+blocks = ["U09"]
+estimated_loc = 420
+spec_sections = ["§12.4"]
+spec_anchors = ["rules/surgical-edit"]
+files_create = []
+files_modify = [
+  "<files-listed-as-edit-in-triage>",
+]
+acceptance = [
+  "Every file with classification='edit' in triage.json has been modified to remove the listed hits.",
+  "Edited files pass a fresh U03/U04/U05 run with hit_count = 0.",
+  "Edits are minimal: line-level diffs, not whole-paragraph rewrites.",
+  "No new Tier-1 words or banned structures introduced by the edit (regression check on the diff itself).",
+]
+produces = ["ART:edited-files"]
+consumes = ["ART:triage-report"]
+critical_decisions = [
+  "Surgical edits are valid only at hit_count <= 2. Above that, escalate to U07 — do not attempt to fix a deeply AI-shaped piece by editing.",
+]
+constraints = [
+  "Preserve commit-style line endings, file encoding, and trailing-newline conventions.",
+  "Do not rename or move files — out of scope for this unit.",
+]
+failure_modes = [
+  "Replacing 'underscore' with 'highlight' is swap-and-pray (§12.1) and will likely re-trigger on regression — prefer deletion.",
+]
+rationale = "Most pieces in a maintained codebase score 1-2 hits. A surgical pass is the right cost/value trade for that population."
+
+# ============================================================================
+# LAYER 4: Verification
+# ============================================================================
+
+[units.U09]
+name = "regression-audit"
+summary = "Re-run vocabulary, structural, and voice/format scans against the rewritten and edited files only. Confirm hit_count is at the targeted threshold and no new tells were introduced."
+layer = 4
+tier = 1
+status = "pending"
+depends_on = [
+  "U07",
+  "U08",
+]
+blocks = ["U10"]
+estimated_loc = 200
+spec_sections = ["§13"]
+spec_anchors = ["rules/checklist"]
+files_create = [
+  "build/audit/regression.json",
+  "build/audit/regression_report.md",
+]
+files_modify = []
+acceptance = [
+  "Every file in ART:rewritten-files has hit_count <= 1 on regression.",
+  "Every file in ART:edited-files has hit_count = 0 on regression.",
+  "Files that fail regression are listed with their residual hits and routed back to U07 or U08 for a second pass (escalation: U08 -> U07 if still > 2).",
+  "Regression report is human-readable and lists every previously-flagged hit with status in {fixed, persisted, regressed}.",
+]
+produces = ["ART:regression-report"]
+consumes = [
+  "ART:rewritten-files",
+  "ART:edited-files",
+]
+critical_decisions = [
+  "A residual hit on a 'rewrite' piece is acceptable up to 1 (matches the §13 'piece scoring 3 or more should be rewritten' inverse threshold).",
+  "A residual hit on an 'edit' piece is a failure — surgical edits must zero out their targets.",
+]
+constraints = [
+  "Do not re-scan unchanged files — regression is scoped to the diff.",
+]
+failure_modes = [
+  "Persistent failures after one rewrite cycle indicate a content-versus-style conflict (e.g., the source genuinely needs the word 'realm' because it's a Tolkien article) — escalate to human review rather than loop indefinitely.",
+]
+rationale = "Without a regression check, the rewrite/edit step quietly trades old tells for new ones (a documented swap-and-pray failure mode, §12.1)."
+
+[units.U10]
+name = "pre-publish-checklist"
+summary = "Apply §13 pre-publish checklist to the union of rewritten and edited files. Emit a final clean-set artifact with attestation that every piece is below threshold across vocabulary, structure, voice, and format."
+layer = 5
+tier = 1
+status = "pending"
+depends_on = ["U09"]
+blocks = []
+estimated_loc = 120
+spec_sections = ["§13", "§14"]
+spec_anchors = ["rules/checklist", "rules/sign-off"]
+files_create = [
+  "build/audit/CLEAN_SET.toml",
+  "build/audit/audit_summary.md",
+]
+files_modify = []
+acceptance = [
+  "CLEAN_SET.toml lists every audited file with final classification and hit_count post-fix.",
+  "audit_summary.md reports total files audited, files rewritten, files edited, files unchanged, total hits removed, total hits remaining, and any escalated-to-human files.",
+  "Sign-off block records the rule-set hash from U02 so the run is reproducible.",
+  "Exit code = 0 only if every non-escalated file has hit_count <= 1.",
+]
+produces = ["OUT:clean-writing-set"]
+consumes = ["ART:regression-report"]
+critical_decisions = [
+  "Exit code is authoritative (matches the §3 P2 'commitment over balance' principle and the existing repo policy on validator authority).",
+  "Files escalated to human review are not failures of the DAG — they are the DAG correctly recognizing its scope boundary.",
+]
+constraints = [
+  "Never modify source files in U10. This unit only attests and reports.",
+]
+failure_modes = [
+  "If the rule-set hash changed between U02 and U10 (someone edited the contract mid-run), the attestation is invalid — abort with a non-zero exit code.",
+]
+rationale = "A single sign-off artifact gives downstream consumers (CI, release gates, the control plane) one place to look for audit status."
+
+# ============================================================================
+# COMPUTED (derived from `units`, never guessed)
+# ============================================================================
+
+[computed]
+entry_points = [
+  "U01",
+  "U02",
+]
+leaf_nodes = ["U10"]
+critical_path = [
+  "U02",
+  "U04",
+  "U06",
+  "U07",
+  "U09",
+  "U10",
+]
+critical_path_loc = 1990
+
+[computed.max_parallel]
+layer0 = 2
+layer1 = 3
+layer2 = 1
+layer3 = 2
+layer4 = 1
+layer5 = 1
+
+[[computed.conflict_groups]]
+files = ["build/audit/findings_vocab.json"]
+units = ["U03"]
+
+[[computed.conflict_groups]]
+files = ["build/audit/findings_structure.json"]
+units = ["U04"]
+
+[[computed.conflict_groups]]
+files = ["build/audit/findings_voice_format.json"]
+units = ["U05"]
+
+[[computed.conflict_groups]]
+files = ["build/audit/triage.json", "build/audit/triage_report.md"]
+units = ["U06"]
+
+[[computed.conflict_groups]]
+files = ["<files-listed-as-rewrite-in-triage>"]
+units = ["U07"]
+
+[[computed.conflict_groups]]
+files = ["<files-listed-as-edit-in-triage>"]
+units = ["U08"]
+
+[computed.loc_totals]
+tier1 = 3030
+tier2 = 0
+tier3 = 0
+all = 3030
